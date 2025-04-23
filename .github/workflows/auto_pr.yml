@@ -1,0 +1,53 @@
+name: Criar PR Automática
+
+on:
+  workflow_run:
+    workflows: ["Django CI"]
+    types:
+      - completed
+
+jobs:
+  create-pull-request:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Criar Pull Request automática
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const base = "master";
+            const head = "${{ github.event.workflow_run.head_branch }}";
+
+            const { data: existingPRs } = await github.rest.pulls.list({
+              owner,
+              repo,
+              head: `${owner}:${head}`,
+              base
+            });
+
+            if (existingPRs.length === 0) {
+              await github.rest.pulls.create({
+                owner,
+                repo,
+                title: `PR automática: mudanças da branch ${head}`,
+                head,
+                base,
+                body: "Esta PR foi criada automaticamente após novos commits."
+              });
+              console.log(`Pull Request criada com sucesso para ${head} -> ${base}`);
+            } else {
+              console.log("Uma PR já existe para essa branch. Nenhuma nova PR foi criada.");
+            }
