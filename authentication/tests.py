@@ -1,7 +1,7 @@
 import pytest
 from django.urls import reverse
 from rest_framework.test import APIClient
-from django.contrib.auth.models import User
+from accounts.models import CustomUser
 
 @pytest.mark.django_db
 class TestAuthenticationViews:
@@ -10,7 +10,7 @@ class TestAuthenticationViews:
         self.client = APIClient()
         self.username = 'testuser'
         self.password = 'teste123'
-        self.user = User.objects.create_user(username=self.username, password=self.password)
+        self.user = CustomUser.objects.create_user(username=self.username, password=self.password)
         self.token_url = reverse('authentication:token_obtain_pair')
         self.refresh_url = reverse('authentication:token_refresh')
         self.verify_url = reverse('authentication:token_verify')
